@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          read_status: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          read_status?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          read_status?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -38,6 +62,120 @@ export type Database = {
         }
         Relationships: []
       }
+      share_purchases: {
+        Row: {
+          created_at: string
+          id: string
+          number_of_shares: number
+          payment_method: string
+          payment_screenshot_url: string | null
+          price_per_share: number
+          status: Database["public"]["Enums"]["request_status"]
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          number_of_shares: number
+          payment_method: string
+          payment_screenshot_url?: string | null
+          price_per_share?: number
+          status?: Database["public"]["Enums"]["request_status"]
+          total_amount: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          number_of_shares?: number
+          payment_method?: string
+          payment_screenshot_url?: string | null
+          price_per_share?: number
+          status?: Database["public"]["Enums"]["request_status"]
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      share_sales: {
+        Row: {
+          created_at: string
+          id: string
+          number_of_shares: number
+          status: Database["public"]["Enums"]["request_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          number_of_shares: number
+          status?: Database["public"]["Enums"]["request_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          number_of_shares?: number
+          status?: Database["public"]["Enums"]["request_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          related_purchase_id: string | null
+          related_sale_id: string | null
+          status: Database["public"]["Enums"]["request_status"]
+          type: Database["public"]["Enums"]["transaction_type"]
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          related_purchase_id?: string | null
+          related_sale_id?: string | null
+          status?: Database["public"]["Enums"]["request_status"]
+          type: Database["public"]["Enums"]["transaction_type"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          related_purchase_id?: string | null
+          related_sale_id?: string | null
+          status?: Database["public"]["Enums"]["request_status"]
+          type?: Database["public"]["Enums"]["transaction_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_related_purchase_id_fkey"
+            columns: ["related_purchase_id"]
+            isOneToOne: false
+            referencedRelation: "share_purchases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_related_sale_id_fkey"
+            columns: ["related_sale_id"]
+            isOneToOne: false
+            referencedRelation: "share_sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -59,11 +197,36 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_balances: {
+        Row: {
+          current_value: number
+          total_invested: number
+          total_shares: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          current_value?: number
+          total_invested?: number
+          total_shares?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          current_value?: number
+          total_invested?: number
+          total_shares?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      ensure_wallet: { Args: { _user_id: string }; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -71,9 +234,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      recalc_wallet: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"
+      request_status: "pending" | "approved" | "rejected"
+      transaction_type: "buy" | "sell"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -202,6 +368,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      request_status: ["pending", "approved", "rejected"],
+      transaction_type: ["buy", "sell"],
     },
   },
 } as const
