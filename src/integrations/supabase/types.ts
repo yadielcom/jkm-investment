@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      company_growth: {
+        Row: {
+          created_at: string
+          growth_percentage: number
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          growth_percentage: number
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          growth_percentage?: number
+          id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -200,6 +218,8 @@ export type Database = {
       wallet_balances: {
         Row: {
           current_value: number
+          profit_loss: number
+          roi: number
           total_invested: number
           total_shares: number
           updated_at: string
@@ -207,6 +227,8 @@ export type Database = {
         }
         Insert: {
           current_value?: number
+          profit_loss?: number
+          roi?: number
           total_invested?: number
           total_shares?: number
           updated_at?: string
@@ -214,6 +236,8 @@ export type Database = {
         }
         Update: {
           current_value?: number
+          profit_loss?: number
+          roi?: number
           total_invested?: number
           total_shares?: number
           updated_at?: string
@@ -226,6 +250,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      current_growth_pct: { Args: never; Returns: number }
       ensure_wallet: { Args: { _user_id: string }; Returns: undefined }
       has_role: {
         Args: {
