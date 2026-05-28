@@ -1,5 +1,5 @@
 import { createFileRoute, redirect, useNavigate, Link } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import {
@@ -80,12 +80,6 @@ function SellPage() {
   const [submittedId, setSubmittedId] = useState<string | null>(null);
   const lastSubmitRef = useRef(0);
 
-  const walletQuery = useMemo(() => {
-    // We need reactive fetching; use a simple state + effect pattern for one-shot loads
-    return null;
-  }, []);
-
-  // Fetch wallet balance
   const [wallet, setWallet] = useState<{
     total_shares: number;
     total_invested: number;
@@ -93,22 +87,12 @@ function SellPage() {
   } | null>(null);
   const [walletLoading, setWalletLoading] = useState(true);
 
-  useState(() => {
-    // handled in useEffect below
-  });
-
   const [sales, setSales] = useState<
     Array<{ id: string; number_of_shares: number; status: string; created_at: string }>
   >([]);
   const [salesLoading, setSalesLoading] = useState(true);
 
-  useState(() => {
-    // handled in useEffect below
-  });
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const React = require("react");
-  React.useEffect(() => {
+  useEffect(() => {
     let cancelled = false;
     async function load() {
       const [{ data: w }, { data: s }] = await Promise.all([
