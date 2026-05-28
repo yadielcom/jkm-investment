@@ -219,6 +219,16 @@ function DashboardPage() {
           )}
         </section>
 
+        {/* Quick actions */}
+        <section className="flex flex-wrap gap-3">
+          <Button asChild className="bg-primary hover:bg-primary/90">
+            <Link to="/buy">Buy Shares</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to="/sell">Sell Shares</Link>
+          </Button>
+        </section>
+
         {isEmpty ? (
           <EmptyState />
         ) : (
