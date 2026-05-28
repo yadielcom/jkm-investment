@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import {
@@ -512,8 +512,8 @@ function EmptyState() {
             building your portfolio.
           </p>
         </div>
-        <Button size="lg" className="bg-primary hover:bg-primary/90">
-          Buy your first shares
+        <Button size="lg" className="bg-primary hover:bg-primary/90" asChild>
+          <Link to="/buy">Buy your first shares</Link>
         </Button>
         <p className="text-[11px] text-muted-foreground pt-2">
           ⚠️ Only invest what you can afford to lose.
