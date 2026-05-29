@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
   Users,
@@ -26,6 +27,18 @@ import {
   ImageIcon,
   ShieldCheck,
 } from "lucide-react";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { useRealtime } from "@/hooks/use-realtime";
 
 type Status = "pending" | "approved" | "rejected";
 
@@ -155,6 +168,9 @@ function AdminPage() {
   const [totalSharesSold, setTotalSharesSold] = useState(0);
   const [totalInvested, setTotalInvested] = useState(0);
   const [growthPct, setGrowthPct] = useState<number>(0);
+  const [growthHistory, setGrowthHistory] = useState<
+    { growth_percentage: number; created_at: string }[]
+  >([]);
   const [growthInput, setGrowthInput] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [submittingGrowth, setSubmittingGrowth] = useState(false);
@@ -202,8 +218,8 @@ function AdminPage() {
       supabase
         .from("company_growth")
         .select("growth_percentage, created_at")
-        .order("created_at", { ascending: false })
-        .limit(1),
+        .order("created_at", { ascending: true })
+        .limit(100),
     ]);
 
     setPurchases((purchasesRes.data ?? []) as PurchaseRow[]);
@@ -229,13 +245,61 @@ function AdminPage() {
       wallets.reduce((sum, w) => sum + Number(w.total_invested ?? 0), 0),
     );
 
-    setGrowthPct(Number(growthRes.data?.[0]?.growth_percentage ?? 0));
+    const growthRows = (growthRes.data ?? []) as {
+      growth_percentage: number;
+      created_at: string;
+    }[];
+    setGrowthHistory(growthRows);
+    setGrowthPct(
+      Number(growthRows[growthRows.length - 1]?.growth_percentage ?? 0),
+    );
     setLoading(false);
   }
 
   useEffect(() => {
     void loadAll();
   }, []);
+
+  useRealtime(
+    [
+      { table: "share_purchases" },
+      { table: "share_sales" },
+      { table: "transactions" },
+      { table: "wallet_balances" },
+      { table: "company_growth" },
+      { table: "admin_activity_logs" },
+      { table: "profiles" },
+    ],
+    () => {
+      void loadAll();
+    },
+  );
+
+  const txChartData = useMemo(() => {
+    const buckets: Record<string, { date: string; buys: number; sells: number }> = {};
+    transactions.forEach((t) => {
+      const day = new Date(t.created_at).toLocaleDateString("en-ET", {
+        month: "short",
+        day: "numeric",
+      });
+      buckets[day] = buckets[day] ?? { date: day, buys: 0, sells: 0 };
+      if (t.type === "buy") buckets[day].buys += Number(t.amount);
+      else buckets[day].sells += Number(t.amount);
+    });
+    return Object.values(buckets).slice(-14);
+  }, [transactions]);
+
+  const growthChartData = useMemo(
+    () =>
+      growthHistory.map((g) => ({
+        date: new Date(g.created_at).toLocaleDateString("en-ET", {
+          month: "short",
+          day: "numeric",
+        }),
+        pct: Number(g.growth_percentage),
+      })),
+    [growthHistory],
+  );
 
   const pendingPurchases = useMemo(
     () => purchases.filter((p) => p.status === "pending"),
@@ -412,6 +476,80 @@ function AdminPage() {
             </form>
           </div>
         </Card>
+
+        {/* Analytics charts */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="p-6">
+            <div className="flex items-baseline justify-between mb-4">
+              <div>
+                <h3 className="text-base font-semibold">Company growth history</h3>
+                <p className="text-xs text-muted-foreground">
+                  Latest: {growthPct >= 0 ? "+" : ""}{growthPct}%
+                </p>
+              </div>
+            </div>
+            <div className="h-64">
+              {loading ? (
+                <Skeleton className="h-full w-full" />
+              ) : growthChartData.length === 0 ? (
+                <div className="h-full grid place-items-center text-sm text-muted-foreground">
+                  No growth records yet
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={growthChartData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="g-admin-growth" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--color-accent)" stopOpacity={0.5} />
+                        <stop offset="100%" stopColor="var(--color-accent)" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+                    <YAxis tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" width={40} tickFormatter={(v) => `${v}%`} />
+                    <Tooltip
+                      contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }}
+                      formatter={(v) => `${Number(v).toFixed(2)}%`}
+                    />
+                    <Area type="monotone" dataKey="pct" stroke="var(--color-accent)" strokeWidth={2} fill="url(#g-admin-growth)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="mb-4">
+              <h3 className="text-base font-semibold">Transaction activity (last 14 days)</h3>
+              <p className="text-xs text-muted-foreground">Buys vs sells per day</p>
+            </div>
+            <div className="h-64">
+              {loading ? (
+                <Skeleton className="h-full w-full" />
+              ) : txChartData.length === 0 ? (
+                <div className="h-full grid place-items-center text-sm text-muted-foreground">
+                  No transactions yet
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={txChartData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+                    <YAxis tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" width={60} tickFormatter={(v) => Intl.NumberFormat("en", { notation: "compact" }).format(Number(v))} />
+                    <Tooltip
+                      contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }}
+                      formatter={(v) => formatETB(Number(v))}
+                    />
+                    <Bar dataKey="buys" fill="var(--color-accent)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="sells" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </Card>
+        </section>
+
+
 
         {/* Pending purchases */}
         <Card className="p-0 overflow-hidden">
