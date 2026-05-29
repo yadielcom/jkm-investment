@@ -17,8 +17,13 @@ export function useRealtime(subs: TableSub[], onChange: () => void) {
       `rt-${subs.map((s) => `${s.table}:${s.filter ?? "all"}`).join("|")}-${Math.random().toString(36).slice(2, 8)}`,
     );
     subs.forEach((s) => {
-      channel.on(
-        // @ts-expect-error supabase types are loose for postgres_changes
+      (channel as unknown as {
+        on: (
+          type: string,
+          opts: Record<string, unknown>,
+          cb: () => void,
+        ) => void;
+      }).on(
         "postgres_changes",
         {
           event: s.event ?? "*",
