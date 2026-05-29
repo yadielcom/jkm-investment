@@ -218,8 +218,8 @@ function AdminPage() {
       supabase
         .from("company_growth")
         .select("growth_percentage, created_at")
-        .order("created_at", { ascending: false })
-        .limit(1),
+        .order("created_at", { ascending: true })
+        .limit(100),
     ]);
 
     setPurchases((purchasesRes.data ?? []) as PurchaseRow[]);
@@ -245,13 +245,61 @@ function AdminPage() {
       wallets.reduce((sum, w) => sum + Number(w.total_invested ?? 0), 0),
     );
 
-    setGrowthPct(Number(growthRes.data?.[0]?.growth_percentage ?? 0));
+    const growthRows = (growthRes.data ?? []) as {
+      growth_percentage: number;
+      created_at: string;
+    }[];
+    setGrowthHistory(growthRows);
+    setGrowthPct(
+      Number(growthRows[growthRows.length - 1]?.growth_percentage ?? 0),
+    );
     setLoading(false);
   }
 
   useEffect(() => {
     void loadAll();
   }, []);
+
+  useRealtime(
+    [
+      { table: "share_purchases" },
+      { table: "share_sales" },
+      { table: "transactions" },
+      { table: "wallet_balances" },
+      { table: "company_growth" },
+      { table: "admin_activity_logs" },
+      { table: "profiles" },
+    ],
+    () => {
+      void loadAll();
+    },
+  );
+
+  const txChartData = useMemo(() => {
+    const buckets: Record<string, { date: string; buys: number; sells: number }> = {};
+    transactions.forEach((t) => {
+      const day = new Date(t.created_at).toLocaleDateString("en-ET", {
+        month: "short",
+        day: "numeric",
+      });
+      buckets[day] = buckets[day] ?? { date: day, buys: 0, sells: 0 };
+      if (t.type === "buy") buckets[day].buys += Number(t.amount);
+      else buckets[day].sells += Number(t.amount);
+    });
+    return Object.values(buckets).slice(-14);
+  }, [transactions]);
+
+  const growthChartData = useMemo(
+    () =>
+      growthHistory.map((g) => ({
+        date: new Date(g.created_at).toLocaleDateString("en-ET", {
+          month: "short",
+          day: "numeric",
+        }),
+        pct: Number(g.growth_percentage),
+      })),
+    [growthHistory],
+  );
 
   const pendingPurchases = useMemo(
     () => purchases.filter((p) => p.status === "pending"),
