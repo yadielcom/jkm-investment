@@ -477,6 +477,80 @@ function AdminPage() {
           </div>
         </Card>
 
+        {/* Analytics charts */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="p-6">
+            <div className="flex items-baseline justify-between mb-4">
+              <div>
+                <h3 className="text-base font-semibold">Company growth history</h3>
+                <p className="text-xs text-muted-foreground">
+                  Latest: {growthPct >= 0 ? "+" : ""}{growthPct}%
+                </p>
+              </div>
+            </div>
+            <div className="h-64">
+              {loading ? (
+                <Skeleton className="h-full w-full" />
+              ) : growthChartData.length === 0 ? (
+                <div className="h-full grid place-items-center text-sm text-muted-foreground">
+                  No growth records yet
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={growthChartData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="g-admin-growth" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--color-accent)" stopOpacity={0.5} />
+                        <stop offset="100%" stopColor="var(--color-accent)" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+                    <YAxis tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" width={40} tickFormatter={(v) => `${v}%`} />
+                    <Tooltip
+                      contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }}
+                      formatter={(v) => `${Number(v).toFixed(2)}%`}
+                    />
+                    <Area type="monotone" dataKey="pct" stroke="var(--color-accent)" strokeWidth={2} fill="url(#g-admin-growth)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="mb-4">
+              <h3 className="text-base font-semibold">Transaction activity (last 14 days)</h3>
+              <p className="text-xs text-muted-foreground">Buys vs sells per day</p>
+            </div>
+            <div className="h-64">
+              {loading ? (
+                <Skeleton className="h-full w-full" />
+              ) : txChartData.length === 0 ? (
+                <div className="h-full grid place-items-center text-sm text-muted-foreground">
+                  No transactions yet
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={txChartData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" />
+                    <YAxis tick={{ fontSize: 11 }} stroke="var(--color-muted-foreground)" width={60} tickFormatter={(v) => Intl.NumberFormat("en", { notation: "compact" }).format(Number(v))} />
+                    <Tooltip
+                      contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }}
+                      formatter={(v) => formatETB(Number(v))}
+                    />
+                    <Bar dataKey="buys" fill="var(--color-accent)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="sells" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </Card>
+        </section>
+
+
+
         {/* Pending purchases */}
         <Card className="p-0 overflow-hidden">
           <div className="px-6 py-4 border-b border-border/60 flex items-center justify-between">
