@@ -293,6 +293,9 @@ function DashboardPage() {
                 <Bell className="h-3 w-3" /> {unreadCount} new
               </span>
             )}
+            <Button variant="ghost" size="sm" asChild className="text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-foreground/10">
+              <Link to="/">Home</Link>
+            </Button>
             <Button variant="secondary" size="sm" onClick={signOut}>
               Sign out
             </Button>

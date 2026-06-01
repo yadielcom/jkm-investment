@@ -391,6 +391,9 @@ function AdminPage() {
               <ShieldCheck className="h-3.5 w-3.5 text-accent" />
               {user.email}
             </span>
+            <Button variant="ghost" size="sm" asChild className="text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-foreground/10">
+              <Link to="/">Home</Link>
+            </Button>
             <Button variant="secondary" onClick={signOut}>
               Sign out
             </Button>
