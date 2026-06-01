@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate, Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -391,6 +391,9 @@ function AdminPage() {
               <ShieldCheck className="h-3.5 w-3.5 text-accent" />
               {user.email}
             </span>
+            <Button variant="ghost" size="sm" asChild className="text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-foreground/10">
+              <Link to="/">Home</Link>
+            </Button>
             <Button variant="secondary" onClick={signOut}>
               Sign out
             </Button>

@@ -84,6 +84,9 @@ function SignupPage() {
         </p>
       }
     >
+      <Button variant="ghost" size="sm" asChild className="px-0 text-muted-foreground hover:text-foreground">
+        <Link to="/">← Home</Link>
+      </Button>
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="full_name">Full name</Label>
