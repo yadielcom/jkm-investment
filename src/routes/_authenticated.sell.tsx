@@ -35,16 +35,23 @@ export const Route = createFileRoute("/_authenticated/sell")({
   component: SellPage,
 });
 
-const SHARE_PRICE = 1000;
+const BASE_SHARE_PRICE = 1000;
 
 function formatETB(n: number | null | undefined) {
   const v = Number(n ?? 0);
   return new Intl.NumberFormat("en-ET", {
     style: "currency",
     currency: "ETB",
-    maximumFractionDigits: 0,
+    maximumFractionDigits: 2,
   }).format(v);
 }
+
+function formatShares(n: number) {
+  return new Intl.NumberFormat("en-ET", {
+    maximumFractionDigits: 4,
+  }).format(n);
+}
+
 
 function formatDate(d: string) {
   return new Date(d).toLocaleString("en-ET", {
