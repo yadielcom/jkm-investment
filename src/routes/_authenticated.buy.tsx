@@ -265,7 +265,9 @@ function BuyPage() {
             <CardHeader>
               <CardTitle>Purchase details</CardTitle>
               <CardDescription>
-                Each share is fixed at {formatETB(SHARE_PRICE)}.
+                Current share price: {formatETB(currentPrice)} (base{" "}
+                {formatETB(BASE_SHARE_PRICE)} × company growth). Fractional
+                shares allowed.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
@@ -274,10 +276,10 @@ function BuyPage() {
                 <Input
                   id="shares"
                   type="number"
-                  inputMode="numeric"
-                  min={1}
-                  step={1}
-                  placeholder="e.g. 10"
+                  inputMode="decimal"
+                  min={0.0001}
+                  step="0.0001"
+                  placeholder="e.g. 1.5"
                   value={shares}
                   onChange={(e) => setShares(e.target.value)}
                   required
@@ -292,9 +294,10 @@ function BuyPage() {
                   {formatETB(total)}
                 </div>
                 <div className="mt-1 text-xs text-sidebar-foreground/60">
-                  {sharesNum.toLocaleString()} × {formatETB(SHARE_PRICE)}
+                  {formatShares(sharesNum)} × {formatETB(currentPrice)}
                 </div>
               </div>
+
 
               <div className="space-y-3">
                 <Label>Payment method</Label>
