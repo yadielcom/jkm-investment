@@ -116,14 +116,35 @@ function BuyPage() {
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
+  const [currentPrice, setCurrentPrice] = useState<number>(BASE_SHARE_PRICE);
   const fileRef = useRef<HTMLInputElement>(null);
   const lastSubmitRef = useRef(0);
 
+  // Fetch current dynamic share price (base × (1 + growth%))
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      const { data } = await supabase
+        .from("company_growth")
+        .select("growth_percentage")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const g = Number(data?.growth_percentage ?? 0);
+      if (!cancelled) setCurrentPrice(BASE_SHARE_PRICE * (1 + g / 100));
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const sharesNum = useMemo(() => {
     const n = Number(shares);
-    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+    return Number.isFinite(n) && n > 0 ? n : 0;
   }, [shares]);
-  const total = sharesNum * SHARE_PRICE;
+  const total = sharesNum * currentPrice;
+
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -163,8 +184,9 @@ function BuyPage() {
         .insert({
           user_id: userId,
           number_of_shares: parsed.data.shares,
-          price_per_share: SHARE_PRICE,
-          total_amount: parsed.data.shares * SHARE_PRICE, // backend trigger overrides
+          price_per_share: currentPrice, // backend trigger restamps to current price
+          total_amount: parsed.data.shares * currentPrice, // backend trigger overrides
+
           payment_method: parsed.data.method,
           payment_screenshot_url: path,
           status: "pending",
