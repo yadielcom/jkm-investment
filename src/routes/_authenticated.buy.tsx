@@ -1,5 +1,6 @@
 import { createFileRoute, redirect, useNavigate, Link } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
 import { z } from "zod";
 import { toast } from "sonner";
 import {
@@ -39,7 +40,7 @@ export const Route = createFileRoute("/_authenticated/buy")({
   component: BuyPage,
 });
 
-const SHARE_PRICE = 1000;
+const BASE_SHARE_PRICE = 1000;
 const MAX_SHARES = 1_000_000;
 const ACCEPTED = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
@@ -60,8 +61,7 @@ type PaymentMethod = "cbe" | "telebirr";
 const schema = z.object({
   shares: z
     .number({ invalid_type_error: "Enter a valid number of shares" })
-    .int("Whole shares only")
-    .min(1, "At least 1 share")
+    .positive("At least a fraction of a share")
     .max(MAX_SHARES, "Too many shares"),
   method: z.enum(["cbe", "telebirr"]),
   file: z
@@ -70,13 +70,21 @@ const schema = z.object({
     .refine((f) => f.size <= MAX_FILE_BYTES, "Max 5 MB"),
 });
 
+
 function formatETB(n: number) {
   return new Intl.NumberFormat("en-ET", {
     style: "currency",
     currency: "ETB",
-    maximumFractionDigits: 0,
+    maximumFractionDigits: 2,
   }).format(n);
 }
+
+function formatShares(n: number) {
+  return new Intl.NumberFormat("en-ET", {
+    maximumFractionDigits: 4,
+  }).format(n);
+}
+
 
 function CopyButton({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
