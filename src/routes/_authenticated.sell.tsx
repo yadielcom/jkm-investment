@@ -291,7 +291,9 @@ function SellPage() {
               <CardHeader>
                 <CardTitle>Sell details</CardTitle>
                 <CardDescription>
-                  Each share is valued at {formatETB(SHARE_PRICE)}.
+                  Current share price: {formatETB(currentPrice)} (base{" "}
+                  {formatETB(BASE_SHARE_PRICE)} × company growth). Fractional
+                  shares allowed.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">
@@ -300,11 +302,11 @@ function SellPage() {
                   <Input
                     id="shares"
                     type="number"
-                    inputMode="numeric"
-                    min={1}
+                    inputMode="decimal"
+                    min={0.0001}
                     max={owned || undefined}
-                    step={1}
-                    placeholder={owned > 0 ? `e.g. 5 (max ${owned})` : "You own 0 shares"}
+                    step="0.0001"
+                    placeholder={owned > 0 ? `e.g. 1.5 (max ${formatShares(owned)})` : "You own 0 shares"}
                     value={shares}
                     onChange={(e) => setShares(e.target.value)}
                     disabled={owned === 0}
@@ -313,7 +315,7 @@ function SellPage() {
                   {sharesNum > owned && owned > 0 && (
                     <p className="text-xs text-destructive flex items-center gap-1">
                       <Ban className="h-3 w-3" />
-                      You cannot sell more shares than you own ({owned}).
+                      You cannot sell more shares than you own ({formatShares(owned)}).
                     </p>
                   )}
                 </div>
@@ -326,9 +328,10 @@ function SellPage() {
                     {formatETB(total)}
                   </div>
                   <div className="mt-1 text-xs text-sidebar-foreground/60">
-                    {sharesNum.toLocaleString()} × {formatETB(SHARE_PRICE)}
+                    {formatShares(sharesNum)} × {formatETB(currentPrice)}
                   </div>
                 </div>
+
 
                 <div className="rounded-md border border-accent/40 bg-accent/10 px-3 py-2 text-xs flex items-start gap-2">
                   <ShieldAlert className="h-4 w-4 text-accent shrink-0 mt-0.5" />
@@ -410,8 +413,9 @@ function SellPage() {
 
           <div className="text-xs text-muted-foreground leading-relaxed">
             Sell requests are subject to admin approval. Approved sales are
-            processed at the current share value of {formatETB(SHARE_PRICE)} per share.
+            processed at the current share value of {formatETB(currentPrice)} per share.
           </div>
+
         </aside>
       </main>
     </div>
