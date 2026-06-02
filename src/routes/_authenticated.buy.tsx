@@ -1,5 +1,6 @@
 import { createFileRoute, redirect, useNavigate, Link } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
 import { z } from "zod";
 import { toast } from "sonner";
 import {
@@ -39,7 +40,7 @@ export const Route = createFileRoute("/_authenticated/buy")({
   component: BuyPage,
 });
 
-const SHARE_PRICE = 1000;
+const BASE_SHARE_PRICE = 1000;
 const MAX_SHARES = 1_000_000;
 const ACCEPTED = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
@@ -60,8 +61,7 @@ type PaymentMethod = "cbe" | "telebirr";
 const schema = z.object({
   shares: z
     .number({ invalid_type_error: "Enter a valid number of shares" })
-    .int("Whole shares only")
-    .min(1, "At least 1 share")
+    .positive("At least a fraction of a share")
     .max(MAX_SHARES, "Too many shares"),
   method: z.enum(["cbe", "telebirr"]),
   file: z
@@ -70,13 +70,21 @@ const schema = z.object({
     .refine((f) => f.size <= MAX_FILE_BYTES, "Max 5 MB"),
 });
 
+
 function formatETB(n: number) {
   return new Intl.NumberFormat("en-ET", {
     style: "currency",
     currency: "ETB",
-    maximumFractionDigits: 0,
+    maximumFractionDigits: 2,
   }).format(n);
 }
+
+function formatShares(n: number) {
+  return new Intl.NumberFormat("en-ET", {
+    maximumFractionDigits: 4,
+  }).format(n);
+}
+
 
 function CopyButton({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
@@ -108,14 +116,35 @@ function BuyPage() {
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
+  const [currentPrice, setCurrentPrice] = useState<number>(BASE_SHARE_PRICE);
   const fileRef = useRef<HTMLInputElement>(null);
   const lastSubmitRef = useRef(0);
 
+  // Fetch current dynamic share price (base × (1 + growth%))
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      const { data } = await supabase
+        .from("company_growth")
+        .select("growth_percentage")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const g = Number(data?.growth_percentage ?? 0);
+      if (!cancelled) setCurrentPrice(BASE_SHARE_PRICE * (1 + g / 100));
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const sharesNum = useMemo(() => {
     const n = Number(shares);
-    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+    return Number.isFinite(n) && n > 0 ? n : 0;
   }, [shares]);
-  const total = sharesNum * SHARE_PRICE;
+  const total = sharesNum * currentPrice;
+
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -155,8 +184,9 @@ function BuyPage() {
         .insert({
           user_id: userId,
           number_of_shares: parsed.data.shares,
-          price_per_share: SHARE_PRICE,
-          total_amount: parsed.data.shares * SHARE_PRICE, // backend trigger overrides
+          price_per_share: currentPrice, // backend trigger restamps to current price
+          total_amount: parsed.data.shares * currentPrice, // backend trigger overrides
+
           payment_method: parsed.data.method,
           payment_screenshot_url: path,
           status: "pending",
@@ -235,7 +265,9 @@ function BuyPage() {
             <CardHeader>
               <CardTitle>Purchase details</CardTitle>
               <CardDescription>
-                Each share is fixed at {formatETB(SHARE_PRICE)}.
+                Current share price: {formatETB(currentPrice)} (base{" "}
+                {formatETB(BASE_SHARE_PRICE)} × company growth). Fractional
+                shares allowed.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
@@ -244,10 +276,10 @@ function BuyPage() {
                 <Input
                   id="shares"
                   type="number"
-                  inputMode="numeric"
-                  min={1}
-                  step={1}
-                  placeholder="e.g. 10"
+                  inputMode="decimal"
+                  min={0.0001}
+                  step="0.0001"
+                  placeholder="e.g. 1.5"
                   value={shares}
                   onChange={(e) => setShares(e.target.value)}
                   required
@@ -262,9 +294,10 @@ function BuyPage() {
                   {formatETB(total)}
                 </div>
                 <div className="mt-1 text-xs text-sidebar-foreground/60">
-                  {sharesNum.toLocaleString()} × {formatETB(SHARE_PRICE)}
+                  {formatShares(sharesNum)} × {formatETB(currentPrice)}
                 </div>
               </div>
+
 
               <div className="space-y-3">
                 <Label>Payment method</Label>
