@@ -154,6 +154,7 @@ export type Database = {
           created_at: string
           id: string
           number_of_shares: number
+          price_at_sale: number
           status: Database["public"]["Enums"]["request_status"]
           updated_at: string
           user_id: string
@@ -162,6 +163,7 @@ export type Database = {
           created_at?: string
           id?: string
           number_of_shares: number
+          price_at_sale?: number
           status?: Database["public"]["Enums"]["request_status"]
           updated_at?: string
           user_id: string
@@ -170,6 +172,7 @@ export type Database = {
           created_at?: string
           id?: string
           number_of_shares?: number
+          price_at_sale?: number
           status?: Database["public"]["Enums"]["request_status"]
           updated_at?: string
           user_id?: string
