@@ -35,23 +35,16 @@ export const Route = createFileRoute("/_authenticated/sell")({
   component: SellPage,
 });
 
-const BASE_SHARE_PRICE = 1000;
+const SHARE_PRICE = 1000;
 
 function formatETB(n: number | null | undefined) {
   const v = Number(n ?? 0);
   return new Intl.NumberFormat("en-ET", {
     style: "currency",
     currency: "ETB",
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 0,
   }).format(v);
 }
-
-function formatShares(n: number) {
-  return new Intl.NumberFormat("en-ET", {
-    maximumFractionDigits: 4,
-  }).format(n);
-}
-
 
 function formatDate(d: string) {
   return new Date(d).toLocaleString("en-ET", {
@@ -85,7 +78,6 @@ function SellPage() {
   const [shares, setShares] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
-  const [currentPrice, setCurrentPrice] = useState<number>(BASE_SHARE_PRICE);
   const lastSubmitRef = useRef(0);
 
   const [wallet, setWallet] = useState<{
@@ -96,14 +88,14 @@ function SellPage() {
   const [walletLoading, setWalletLoading] = useState(true);
 
   const [sales, setSales] = useState<
-    Array<{ id: string; number_of_shares: number; status: string; created_at: string; price_at_sale?: number | null }>
+    Array<{ id: string; number_of_shares: number; status: string; created_at: string }>
   >([]);
   const [salesLoading, setSalesLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const [{ data: w }, { data: s }, { data: g }] = await Promise.all([
+      const [{ data: w }, { data: s }] = await Promise.all([
         supabase
           .from("wallet_balances")
           .select("total_shares,total_invested,current_value")
@@ -111,23 +103,14 @@ function SellPage() {
           .maybeSingle(),
         supabase
           .from("share_sales")
-          .select("id,number_of_shares,status,created_at,price_at_sale")
+          .select("id,number_of_shares,status,created_at")
           .eq("user_id", userId)
           .order("created_at", { ascending: false })
           .limit(10),
-        supabase
-          .from("company_growth")
-          .select("growth_percentage")
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
       ]);
       if (!cancelled) {
         setWallet(w ?? { total_shares: 0, total_invested: 0, current_value: 0 });
         setSales((s as any) ?? []);
-        setCurrentPrice(
-          BASE_SHARE_PRICE * (1 + Number(g?.growth_percentage ?? 0) / 100),
-        );
         setWalletLoading(false);
         setSalesLoading(false);
       }
@@ -142,11 +125,10 @@ function SellPage() {
 
   const sharesNum = useMemo(() => {
     const n = Number(shares);
-    return Number.isFinite(n) && n > 0 ? n : 0;
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
   }, [shares]);
 
-  const total = sharesNum * currentPrice;
-
+  const total = sharesNum * SHARE_PRICE;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -162,10 +144,10 @@ function SellPage() {
     const schema = z.object({
       shares: z
         .number({ invalid_type_error: "Enter a valid number of shares" })
-        .positive("At least a fraction of a share")
-        .max(owned, `You only own ${formatShares(owned)} share${owned === 1 ? "" : "s"}`),
+        .int("Whole shares only")
+        .min(1, "At least 1 share")
+        .max(owned, `You only own ${owned} share${owned === 1 ? "" : "s"}`),
     });
-
 
     const parsed = schema.safeParse({ shares: sharesNum });
     if (!parsed.success) {
@@ -291,9 +273,7 @@ function SellPage() {
               <CardHeader>
                 <CardTitle>Sell details</CardTitle>
                 <CardDescription>
-                  Current share price: {formatETB(currentPrice)} (base{" "}
-                  {formatETB(BASE_SHARE_PRICE)} × company growth). Fractional
-                  shares allowed.
+                  Each share is valued at {formatETB(SHARE_PRICE)}.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">
@@ -302,11 +282,11 @@ function SellPage() {
                   <Input
                     id="shares"
                     type="number"
-                    inputMode="decimal"
-                    min={0.0001}
+                    inputMode="numeric"
+                    min={1}
                     max={owned || undefined}
-                    step="0.0001"
-                    placeholder={owned > 0 ? `e.g. 1.5 (max ${formatShares(owned)})` : "You own 0 shares"}
+                    step={1}
+                    placeholder={owned > 0 ? `e.g. 5 (max ${owned})` : "You own 0 shares"}
                     value={shares}
                     onChange={(e) => setShares(e.target.value)}
                     disabled={owned === 0}
@@ -315,7 +295,7 @@ function SellPage() {
                   {sharesNum > owned && owned > 0 && (
                     <p className="text-xs text-destructive flex items-center gap-1">
                       <Ban className="h-3 w-3" />
-                      You cannot sell more shares than you own ({formatShares(owned)}).
+                      You cannot sell more shares than you own ({owned}).
                     </p>
                   )}
                 </div>
@@ -328,10 +308,9 @@ function SellPage() {
                     {formatETB(total)}
                   </div>
                   <div className="mt-1 text-xs text-sidebar-foreground/60">
-                    {formatShares(sharesNum)} × {formatETB(currentPrice)}
+                    {sharesNum.toLocaleString()} × {formatETB(SHARE_PRICE)}
                   </div>
                 </div>
-
 
                 <div className="rounded-md border border-accent/40 bg-accent/10 px-3 py-2 text-xs flex items-start gap-2">
                   <ShieldAlert className="h-4 w-4 text-accent shrink-0 mt-0.5" />
@@ -413,9 +392,8 @@ function SellPage() {
 
           <div className="text-xs text-muted-foreground leading-relaxed">
             Sell requests are subject to admin approval. Approved sales are
-            processed at the current share value of {formatETB(currentPrice)} per share.
+            processed at the current share value of {formatETB(SHARE_PRICE)} per share.
           </div>
-
         </aside>
       </main>
     </div>

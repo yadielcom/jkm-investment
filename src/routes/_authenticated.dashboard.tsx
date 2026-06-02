@@ -171,7 +171,7 @@ function DashboardPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("share_sales")
-        .select("id,number_of_shares,status,created_at,price_at_sale")
+        .select("id,number_of_shares,status,created_at")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(20);
@@ -179,7 +179,6 @@ function DashboardPage() {
       return data ?? [];
     },
   });
-
 
   const growth = useQuery({
     queryKey: ["company_growth_history"],
@@ -257,10 +256,9 @@ function DashboardPage() {
         id: s.id,
         date: s.created_at,
         shares: s.number_of_shares,
-        amount: Number(s.number_of_shares) * Number((s as { price_at_sale?: number | null }).price_at_sale ?? 1000),
+        amount: Number(s.number_of_shares) * 1000,
         status: s.status as string,
       })),
-
     ];
     items.sort((a, b) => +new Date(b.date) - +new Date(a.date));
     return items.slice(0, 8);
