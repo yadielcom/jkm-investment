@@ -85,6 +85,7 @@ function SellPage() {
   const [shares, setShares] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
+  const [currentPrice, setCurrentPrice] = useState<number>(BASE_SHARE_PRICE);
   const lastSubmitRef = useRef(0);
 
   const [wallet, setWallet] = useState<{
@@ -95,14 +96,14 @@ function SellPage() {
   const [walletLoading, setWalletLoading] = useState(true);
 
   const [sales, setSales] = useState<
-    Array<{ id: string; number_of_shares: number; status: string; created_at: string }>
+    Array<{ id: string; number_of_shares: number; status: string; created_at: string; price_at_sale?: number | null }>
   >([]);
   const [salesLoading, setSalesLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const [{ data: w }, { data: s }] = await Promise.all([
+      const [{ data: w }, { data: s }, { data: g }] = await Promise.all([
         supabase
           .from("wallet_balances")
           .select("total_shares,total_invested,current_value")
@@ -110,14 +111,23 @@ function SellPage() {
           .maybeSingle(),
         supabase
           .from("share_sales")
-          .select("id,number_of_shares,status,created_at")
+          .select("id,number_of_shares,status,created_at,price_at_sale")
           .eq("user_id", userId)
           .order("created_at", { ascending: false })
           .limit(10),
+        supabase
+          .from("company_growth")
+          .select("growth_percentage")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ]);
       if (!cancelled) {
         setWallet(w ?? { total_shares: 0, total_invested: 0, current_value: 0 });
         setSales((s as any) ?? []);
+        setCurrentPrice(
+          BASE_SHARE_PRICE * (1 + Number(g?.growth_percentage ?? 0) / 100),
+        );
         setWalletLoading(false);
         setSalesLoading(false);
       }
@@ -132,10 +142,11 @@ function SellPage() {
 
   const sharesNum = useMemo(() => {
     const n = Number(shares);
-    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+    return Number.isFinite(n) && n > 0 ? n : 0;
   }, [shares]);
 
-  const total = sharesNum * SHARE_PRICE;
+  const total = sharesNum * currentPrice;
+
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -151,10 +162,10 @@ function SellPage() {
     const schema = z.object({
       shares: z
         .number({ invalid_type_error: "Enter a valid number of shares" })
-        .int("Whole shares only")
-        .min(1, "At least 1 share")
-        .max(owned, `You only own ${owned} share${owned === 1 ? "" : "s"}`),
+        .positive("At least a fraction of a share")
+        .max(owned, `You only own ${formatShares(owned)} share${owned === 1 ? "" : "s"}`),
     });
+
 
     const parsed = schema.safeParse({ shares: sharesNum });
     if (!parsed.success) {
