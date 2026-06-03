@@ -361,7 +361,7 @@ function BuyPage() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={submitting || sharesNum < 1 || !file}
+                disabled={submitting || sharesNum <= 0 || !file}
               >
                 {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                 {submitting ? "Submitting…" : `Submit purchase request`}
