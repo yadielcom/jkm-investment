@@ -341,7 +341,7 @@ function SellPage() {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={submitting || sharesNum < 1 || sharesNum > owned || owned === 0}
+                  disabled={submitting || sharesNum <= 0 || sharesNum > owned || owned === 0}
                 >
                   {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                   {submitting ? "Submitting…" : "Submit sell request"}
