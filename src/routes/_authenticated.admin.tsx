@@ -168,12 +168,15 @@ function AdminPage() {
   const [totalSharesSold, setTotalSharesSold] = useState(0);
   const [totalInvested, setTotalInvested] = useState(0);
   const [growthPct, setGrowthPct] = useState<number>(0);
+  const [currentPrice, setCurrentPrice] = useState<number>(1000);
   const [growthHistory, setGrowthHistory] = useState<
     { growth_percentage: number; created_at: string }[]
   >([]);
   const [growthInput, setGrowthInput] = useState("");
+  const [priceInput, setPriceInput] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [submittingGrowth, setSubmittingGrowth] = useState(false);
+  const [submittingPrice, setSubmittingPrice] = useState(false);
 
   async function signOut() {
     await supabase.auth.signOut();
