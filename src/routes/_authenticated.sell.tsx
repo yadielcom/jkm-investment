@@ -117,7 +117,7 @@ function SellPage() {
           .limit(10),
         supabase
           .from("company_growth")
-          .select("growth_percentage")
+          .select("share_price")
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
@@ -126,7 +126,7 @@ function SellPage() {
         setWallet(w ?? { total_shares: 0, total_invested: 0, current_value: 0 });
         setSales((s as any) ?? []);
         setCurrentPrice(
-          BASE_SHARE_PRICE * (1 + Number(g?.growth_percentage ?? 0) / 100),
+          Number((g as { share_price?: number } | null)?.share_price ?? BASE_SHARE_PRICE),
         );
         setWalletLoading(false);
         setSalesLoading(false);
@@ -291,9 +291,8 @@ function SellPage() {
               <CardHeader>
                 <CardTitle>Sell details</CardTitle>
                 <CardDescription>
-                  Current share price: {formatETB(currentPrice)} (base{" "}
-                  {formatETB(BASE_SHARE_PRICE)} × company growth). Fractional
-                  shares allowed.
+                  Current share price: {formatETB(currentPrice)} (compounded
+                  from company growth). Fractional shares allowed.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">

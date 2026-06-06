@@ -49,16 +49,19 @@ export type Database = {
           created_at: string
           growth_percentage: number
           id: string
+          share_price: number | null
         }
         Insert: {
           created_at?: string
           growth_percentage: number
           id?: string
+          share_price?: number | null
         }
         Update: {
           created_at?: string
           growth_percentage?: number
           id?: string
+          share_price?: number | null
         }
         Relationships: []
       }
@@ -284,6 +287,7 @@ export type Database = {
     }
     Functions: {
       current_growth_pct: { Args: never; Returns: number }
+      current_share_price: { Args: never; Returns: number }
       ensure_wallet: { Args: { _user_id: string }; Returns: undefined }
       has_role: {
         Args: {

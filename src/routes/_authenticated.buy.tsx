@@ -120,18 +120,18 @@ function BuyPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const lastSubmitRef = useRef(0);
 
-  // Fetch current dynamic share price (base × (1 + growth%))
+  // Fetch current compounded share price (stored on latest growth record)
   useEffect(() => {
     let cancelled = false;
     async function load() {
       const { data } = await supabase
         .from("company_growth")
-        .select("growth_percentage")
+        .select("share_price")
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      const g = Number(data?.growth_percentage ?? 0);
-      if (!cancelled) setCurrentPrice(BASE_SHARE_PRICE * (1 + g / 100));
+      const price = Number((data as { share_price?: number } | null)?.share_price ?? BASE_SHARE_PRICE);
+      if (!cancelled) setCurrentPrice(price);
     }
     load();
     return () => {
@@ -265,9 +265,8 @@ function BuyPage() {
             <CardHeader>
               <CardTitle>Purchase details</CardTitle>
               <CardDescription>
-                Current share price: {formatETB(currentPrice)} (base{" "}
-                {formatETB(BASE_SHARE_PRICE)} × company growth). Fractional
-                shares allowed.
+                Current share price: {formatETB(currentPrice)} (compounded
+                from company growth). Fractional shares allowed.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
