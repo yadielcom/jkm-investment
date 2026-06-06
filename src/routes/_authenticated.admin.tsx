@@ -370,6 +370,29 @@ function AdminPage() {
     void loadAll();
   }
 
+  async function submitPriceOverride(e: React.FormEvent) {
+    e.preventDefault();
+    const value = Number(priceInput);
+    if (!Number.isFinite(value) || value <= 0) {
+      toast.error("Enter a share price greater than 0");
+      return;
+    }
+    if (!window.confirm(`Override current share price to ${value} ETB? This affects every portfolio.`)) {
+      return;
+    }
+    setSubmittingPrice(true);
+    const { error } = await supabase.rpc("admin_set_share_price" as never, { new_price: value } as never);
+    setSubmittingPrice(false);
+    if (error) {
+      console.error("[admin_set_share_price]", error);
+      toast.error(error.message);
+      return;
+    }
+    toast.success(`Share price set to ${value} ETB. Wallets recalculated.`);
+    setPriceInput("");
+    void loadAll();
+  }
+
   function userLabel(id: string) {
     const p = profiles[id];
     return p?.full_name || p?.email || id.slice(0, 8);
