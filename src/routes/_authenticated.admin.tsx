@@ -220,7 +220,7 @@ function AdminPage() {
         .select("user_id, total_shares, total_invested"),
       supabase
         .from("company_growth")
-        .select("growth_percentage, created_at")
+        .select("growth_percentage, share_price, created_at")
         .order("created_at", { ascending: true })
         .limit(100),
     ]);
