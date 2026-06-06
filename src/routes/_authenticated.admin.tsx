@@ -168,12 +168,15 @@ function AdminPage() {
   const [totalSharesSold, setTotalSharesSold] = useState(0);
   const [totalInvested, setTotalInvested] = useState(0);
   const [growthPct, setGrowthPct] = useState<number>(0);
+  const [currentPrice, setCurrentPrice] = useState<number>(1000);
   const [growthHistory, setGrowthHistory] = useState<
     { growth_percentage: number; created_at: string }[]
   >([]);
   const [growthInput, setGrowthInput] = useState("");
+  const [priceInput, setPriceInput] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [submittingGrowth, setSubmittingGrowth] = useState(false);
+  const [submittingPrice, setSubmittingPrice] = useState(false);
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -217,7 +220,7 @@ function AdminPage() {
         .select("user_id, total_shares, total_invested"),
       supabase
         .from("company_growth")
-        .select("growth_percentage, created_at")
+        .select("growth_percentage, share_price, created_at")
         .order("created_at", { ascending: true })
         .limit(100),
     ]);
@@ -247,12 +250,13 @@ function AdminPage() {
 
     const growthRows = (growthRes.data ?? []) as {
       growth_percentage: number;
+      share_price: number | null;
       created_at: string;
     }[];
     setGrowthHistory(growthRows);
-    setGrowthPct(
-      Number(growthRows[growthRows.length - 1]?.growth_percentage ?? 0),
-    );
+    const latest = growthRows[growthRows.length - 1];
+    setGrowthPct(Number(latest?.growth_percentage ?? 0));
+    setCurrentPrice(Number(latest?.share_price ?? 1000));
     setLoading(false);
   }
 
@@ -363,6 +367,29 @@ function AdminPage() {
     }
     toast.success("Growth updated. Wallets recalculated.");
     setGrowthInput("");
+    void loadAll();
+  }
+
+  async function submitPriceOverride(e: React.FormEvent) {
+    e.preventDefault();
+    const value = Number(priceInput);
+    if (!Number.isFinite(value) || value <= 0) {
+      toast.error("Enter a share price greater than 0");
+      return;
+    }
+    if (!window.confirm(`Override current share price to ${value} ETB? This affects every portfolio.`)) {
+      return;
+    }
+    setSubmittingPrice(true);
+    const { error } = await supabase.rpc("admin_set_share_price" as never, { new_price: value } as never);
+    setSubmittingPrice(false);
+    if (error) {
+      console.error("[admin_set_share_price]", error);
+      toast.error(error.message);
+      return;
+    }
+    toast.success(`Share price set to ${value} ETB. Wallets recalculated.`);
+    setPriceInput("");
     void loadAll();
   }
 
@@ -479,6 +506,48 @@ function AdminPage() {
             </form>
           </div>
         </Card>
+
+        {/* Manual Share Price Adjustment (admin override) */}
+        <Card className="p-6 border-destructive/40">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h2 className="text-lg font-semibold">Manual Share Price Adjustment</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Override the current market share price. Future ROI updates will compound from this new base price.
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Current share price:{" "}
+                <span className="text-accent font-medium">{formatETB(currentPrice)}</span>
+              </p>
+              <p className="text-xs text-destructive mt-2">
+                Warning: This action overrides the current market share price and affects all portfolio valuations.
+              </p>
+            </div>
+            <form onSubmit={submitPriceOverride} className="flex items-end gap-2">
+              <div>
+                <Label htmlFor="price-override" className="text-xs">
+                  New share price (ETB)
+                </Label>
+                <Input
+                  id="price-override"
+                  type="number"
+                  step="0.000001"
+                  min="0.000001"
+                  placeholder="e.g. 1000"
+                  value={priceInput}
+                  onChange={(e) => setPriceInput(e.target.value)}
+                  className="w-44"
+                  required
+                />
+              </div>
+              <Button type="submit" variant="destructive" disabled={submittingPrice}>
+                {submittingPrice ? "Applying…" : "Apply New Share Price"}
+              </Button>
+            </form>
+          </div>
+        </Card>
+
+
 
         {/* Analytics charts */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">

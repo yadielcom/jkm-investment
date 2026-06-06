@@ -286,6 +286,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_set_share_price: { Args: { new_price: number }; Returns: number }
       current_growth_pct: { Args: never; Returns: number }
       current_share_price: { Args: never; Returns: number }
       ensure_wallet: { Args: { _user_id: string }; Returns: undefined }
