@@ -507,6 +507,48 @@ function AdminPage() {
           </div>
         </Card>
 
+        {/* Manual Share Price Adjustment (admin override) */}
+        <Card className="p-6 border-destructive/40">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h2 className="text-lg font-semibold">Manual Share Price Adjustment</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Override the current market share price. Future ROI updates will compound from this new base price.
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Current share price:{" "}
+                <span className="text-accent font-medium">{formatETB(currentPrice)}</span>
+              </p>
+              <p className="text-xs text-destructive mt-2">
+                Warning: This action overrides the current market share price and affects all portfolio valuations.
+              </p>
+            </div>
+            <form onSubmit={submitPriceOverride} className="flex items-end gap-2">
+              <div>
+                <Label htmlFor="price-override" className="text-xs">
+                  New share price (ETB)
+                </Label>
+                <Input
+                  id="price-override"
+                  type="number"
+                  step="0.000001"
+                  min="0.000001"
+                  placeholder="e.g. 1000"
+                  value={priceInput}
+                  onChange={(e) => setPriceInput(e.target.value)}
+                  className="w-44"
+                  required
+                />
+              </div>
+              <Button type="submit" variant="destructive" disabled={submittingPrice}>
+                {submittingPrice ? "Applying…" : "Apply New Share Price"}
+              </Button>
+            </form>
+          </div>
+        </Card>
+
+
+
         {/* Analytics charts */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="p-6">
