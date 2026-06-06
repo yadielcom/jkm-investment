@@ -250,12 +250,13 @@ function AdminPage() {
 
     const growthRows = (growthRes.data ?? []) as {
       growth_percentage: number;
+      share_price: number | null;
       created_at: string;
     }[];
     setGrowthHistory(growthRows);
-    setGrowthPct(
-      Number(growthRows[growthRows.length - 1]?.growth_percentage ?? 0),
-    );
+    const latest = growthRows[growthRows.length - 1];
+    setGrowthPct(Number(latest?.growth_percentage ?? 0));
+    setCurrentPrice(Number(latest?.share_price ?? 1000));
     setLoading(false);
   }
 
