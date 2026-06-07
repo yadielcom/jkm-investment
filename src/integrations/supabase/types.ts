@@ -96,6 +96,7 @@ export type Database = {
           full_name: string | null
           id: string
           phone: string | null
+          suspended: boolean
         }
         Insert: {
           created_at?: string
@@ -103,6 +104,7 @@ export type Database = {
           full_name?: string | null
           id: string
           phone?: string | null
+          suspended?: boolean
         }
         Update: {
           created_at?: string
@@ -110,6 +112,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          suspended?: boolean
         }
         Relationships: []
       }
@@ -286,7 +289,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_user: { Args: { _user_id: string }; Returns: undefined }
       admin_set_share_price: { Args: { new_price: number }; Returns: number }
+      admin_set_user_suspended: {
+        Args: { _suspended: boolean; _user_id: string }
+        Returns: undefined
+      }
       current_growth_pct: { Args: never; Returns: number }
       current_share_price: { Args: never; Returns: number }
       ensure_wallet: { Args: { _user_id: string }; Returns: undefined }
@@ -297,6 +305,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_suspended: { Args: { _user_id: string }; Returns: boolean }
       recalc_wallet: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
