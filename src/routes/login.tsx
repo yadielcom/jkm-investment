@@ -7,9 +7,14 @@ import { AuthLayout } from "@/components/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SuspendedNotice } from "@/components/SuspendedNotice";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Sign in — JKM Investment" }] }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    suspended: s.suspended === "1" || s.suspended === 1 || s.suspended === true ? true : false,
+    redirect: typeof s.redirect === "string" ? s.redirect : undefined,
+  }),
   component: LoginPage,
 });
 
@@ -20,14 +25,17 @@ const schema = z.object({
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { suspended } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [showSuspended, setShowSuspended] = useState<boolean>(suspended);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setShowSuspended(false);
     const parsed = schema.safeParse({ email, password });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "Invalid input");
@@ -43,6 +51,18 @@ function LoginPage() {
       setLoading(false);
       return;
     }
+
+    // Check suspension
+    const { data: suspendedData } = await supabase.rpc("is_suspended" as never, {
+      _user_id: data.user.id,
+    } as never);
+    if (suspendedData === true) {
+      await supabase.auth.signOut();
+      setShowSuspended(true);
+      setLoading(false);
+      return;
+    }
+
     const role = await getCurrentUserRole(data.user.id);
     navigate({ to: role === "admin" ? "/admin" : "/dashboard", replace: true });
   }
@@ -63,6 +83,7 @@ function LoginPage() {
       <Button variant="ghost" size="sm" asChild className="px-0 text-muted-foreground hover:text-foreground">
         <Link to="/">← Home</Link>
       </Button>
+      {showSuspended && <SuspendedNotice />}
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
