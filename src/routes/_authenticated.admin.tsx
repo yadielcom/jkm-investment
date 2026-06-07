@@ -80,6 +80,13 @@ interface ProfileRow {
   id: string;
   full_name: string | null;
   email: string | null;
+  phone: string | null;
+  suspended: boolean;
+}
+interface WalletRow {
+  user_id: string;
+  total_shares: number;
+  total_invested: number;
 }
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -163,6 +170,7 @@ function AdminPage() {
   const [transactions, setTransactions] = useState<TxRow[]>([]);
   const [logs, setLogs] = useState<LogRow[]>([]);
   const [profiles, setProfiles] = useState<Record<string, ProfileRow>>({});
+  const [wallets, setWallets] = useState<WalletRow[]>([]);
   const [totalUsers, setTotalUsers] = useState(0);
   const [activeShareholders, setActiveShareholders] = useState(0);
   const [totalSharesSold, setTotalSharesSold] = useState(0);
@@ -177,6 +185,8 @@ function AdminPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [submittingGrowth, setSubmittingGrowth] = useState(false);
   const [submittingPrice, setSubmittingPrice] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [userBusyId, setUserBusyId] = useState<string | null>(null);
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -214,7 +224,7 @@ function AdminPage() {
         .select("*")
         .order("created_at", { ascending: false })
         .limit(30),
-      supabase.from("profiles").select("id, full_name, email"),
+      supabase.from("profiles").select("id, full_name, email, phone, suspended"),
       supabase
         .from("wallet_balances")
         .select("user_id, total_shares, total_invested"),
@@ -237,15 +247,16 @@ function AdminPage() {
     setProfiles(pmap);
     setTotalUsers((profilesRes.data ?? []).length);
 
-    const wallets = walletsRes.data ?? [];
+    const walletList = (walletsRes.data ?? []) as WalletRow[];
+    setWallets(walletList);
     setActiveShareholders(
-      wallets.filter((w) => (w.total_shares ?? 0) > 0).length,
+      walletList.filter((w) => Number(w.total_shares ?? 0) > 0).length,
     );
     setTotalSharesSold(
-      wallets.reduce((sum, w) => sum + (w.total_shares ?? 0), 0),
+      walletList.reduce((sum, w) => sum + Number(w.total_shares ?? 0), 0),
     );
     setTotalInvested(
-      wallets.reduce((sum, w) => sum + Number(w.total_invested ?? 0), 0),
+      walletList.reduce((sum, w) => sum + Number(w.total_invested ?? 0), 0),
     );
 
     const growthRows = (growthRes.data ?? []) as {
