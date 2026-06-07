@@ -80,6 +80,13 @@ interface ProfileRow {
   id: string;
   full_name: string | null;
   email: string | null;
+  phone: string | null;
+  suspended: boolean;
+}
+interface WalletRow {
+  user_id: string;
+  total_shares: number;
+  total_invested: number;
 }
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -163,6 +170,7 @@ function AdminPage() {
   const [transactions, setTransactions] = useState<TxRow[]>([]);
   const [logs, setLogs] = useState<LogRow[]>([]);
   const [profiles, setProfiles] = useState<Record<string, ProfileRow>>({});
+  const [wallets, setWallets] = useState<WalletRow[]>([]);
   const [totalUsers, setTotalUsers] = useState(0);
   const [activeShareholders, setActiveShareholders] = useState(0);
   const [totalSharesSold, setTotalSharesSold] = useState(0);
@@ -177,6 +185,8 @@ function AdminPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [submittingGrowth, setSubmittingGrowth] = useState(false);
   const [submittingPrice, setSubmittingPrice] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [userBusyId, setUserBusyId] = useState<string | null>(null);
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -214,7 +224,7 @@ function AdminPage() {
         .select("*")
         .order("created_at", { ascending: false })
         .limit(30),
-      supabase.from("profiles").select("id, full_name, email"),
+      supabase.from("profiles").select("id, full_name, email, phone, suspended"),
       supabase
         .from("wallet_balances")
         .select("user_id, total_shares, total_invested"),
@@ -237,15 +247,16 @@ function AdminPage() {
     setProfiles(pmap);
     setTotalUsers((profilesRes.data ?? []).length);
 
-    const wallets = walletsRes.data ?? [];
+    const walletList = (walletsRes.data ?? []) as WalletRow[];
+    setWallets(walletList);
     setActiveShareholders(
-      wallets.filter((w) => (w.total_shares ?? 0) > 0).length,
+      walletList.filter((w) => Number(w.total_shares ?? 0) > 0).length,
     );
     setTotalSharesSold(
-      wallets.reduce((sum, w) => sum + (w.total_shares ?? 0), 0),
+      walletList.reduce((sum, w) => sum + Number(w.total_shares ?? 0), 0),
     );
     setTotalInvested(
-      wallets.reduce((sum, w) => sum + Number(w.total_invested ?? 0), 0),
+      walletList.reduce((sum, w) => sum + Number(w.total_invested ?? 0), 0),
     );
 
     const growthRows = (growthRes.data ?? []) as {
@@ -398,6 +409,51 @@ function AdminPage() {
     return p?.full_name || p?.email || id.slice(0, 8);
   }
 
+  const userRows = useMemo(() => {
+    const wmap: Record<string, WalletRow> = {};
+    wallets.forEach((w) => { wmap[w.user_id] = w; });
+    const totalShares = wallets.reduce((s, w) => s + Number(w.total_shares ?? 0), 0);
+    return Object.values(profiles)
+      .map((p) => {
+        const w = wmap[p.id];
+        const shares = Number(w?.total_shares ?? 0);
+        const pct = totalShares > 0 ? (shares / totalShares) * 100 : 0;
+        const value = shares * currentPrice;
+        return { profile: p, shares, pct, value };
+      })
+      .sort((a, b) => b.shares - a.shares);
+  }, [profiles, wallets, currentPrice]);
+
+  async function toggleSuspend(userId: string, suspend: boolean) {
+    setUserBusyId(userId);
+    const { error } = await supabase.rpc("admin_set_user_suspended" as never, {
+      _user_id: userId,
+      _suspended: suspend,
+    } as never);
+    setUserBusyId(null);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(suspend ? "User suspended" : "User unsuspended");
+    void loadAll();
+  }
+
+  async function deleteUser(userId: string) {
+    setUserBusyId(userId);
+    const { error } = await supabase.rpc("admin_delete_user" as never, {
+      _user_id: userId,
+    } as never);
+    setUserBusyId(null);
+    setConfirmDeleteId(null);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("User deleted");
+    void loadAll();
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border/60 bg-sidebar text-sidebar-foreground">
@@ -546,6 +602,161 @@ function AdminPage() {
             </form>
           </div>
         </Card>
+
+        {/* User Management */}
+        <Card className="p-0 overflow-hidden">
+          <div className="px-4 sm:px-6 py-4 border-b border-border/60 flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Users className="h-5 w-5 text-accent" /> User Management
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                {userRows.length} registered user{userRows.length === 1 ? "" : "s"} · Total shares: {totalSharesSold.toLocaleString(undefined, { maximumFractionDigits: 4 })}
+              </p>
+            </div>
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Full name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead className="text-right">Shares</TableHead>
+                  <TableHead className="text-right">Ownership</TableHead>
+                  <TableHead className="text-right">Portfolio</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">Loading…</TableCell>
+                  </TableRow>
+                ) : userRows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">No users yet.</TableCell>
+                  </TableRow>
+                ) : (
+                  userRows.map(({ profile: p, shares, pct, value }) => (
+                    <TableRow key={p.id}>
+                      <TableCell className="font-medium">{p.full_name || "—"}</TableCell>
+                      <TableCell className="text-xs">{p.email || "—"}</TableCell>
+                      <TableCell className="text-xs">{p.phone || "—"}</TableCell>
+                      <TableCell className="text-right tabular-nums">{shares.toLocaleString(undefined, { maximumFractionDigits: 4 })}</TableCell>
+                      <TableCell className="text-right tabular-nums">{pct.toFixed(2)}%</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatETB(value)}</TableCell>
+                      <TableCell>
+                        {p.suspended ? (
+                          <Badge variant="outline" className="bg-rose-500/15 text-rose-500 border-rose-500/30">Suspended</Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30">Active</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right whitespace-nowrap space-x-2">
+                        {p.suspended ? (
+                          <Button size="sm" variant="secondary" disabled={userBusyId === p.id} onClick={() => toggleSuspend(p.id, false)}>
+                            Unsuspend
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="outline" disabled={userBusyId === p.id} onClick={() => toggleSuspend(p.id, true)}>
+                            Suspend
+                          </Button>
+                        )}
+                        <Button size="sm" variant="destructive" disabled={userBusyId === p.id} onClick={() => setConfirmDeleteId(p.id)}>
+                          Delete
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden divide-y divide-border/60">
+            {loading ? (
+              <div className="p-6 text-center text-muted-foreground text-sm">Loading…</div>
+            ) : userRows.length === 0 ? (
+              <div className="p-6 text-center text-muted-foreground text-sm">No users yet.</div>
+            ) : (
+              userRows.map(({ profile: p, shares, pct, value }) => (
+                <div key={p.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{p.full_name || "—"}</p>
+                      <p className="text-xs text-muted-foreground truncate">{p.email || "—"}</p>
+                      <p className="text-xs text-muted-foreground">{p.phone || "—"}</p>
+                    </div>
+                    {p.suspended ? (
+                      <Badge variant="outline" className="bg-rose-500/15 text-rose-500 border-rose-500/30 shrink-0">Suspended</Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 shrink-0">Active</Badge>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div>
+                      <p className="text-muted-foreground">Shares</p>
+                      <p className="font-medium tabular-nums">{shares.toLocaleString(undefined, { maximumFractionDigits: 4 })}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Ownership</p>
+                      <p className="font-medium tabular-nums">{pct.toFixed(2)}%</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Portfolio</p>
+                      <p className="font-medium tabular-nums">{formatETB(value)}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    {p.suspended ? (
+                      <Button size="sm" variant="secondary" className="flex-1" disabled={userBusyId === p.id} onClick={() => toggleSuspend(p.id, false)}>
+                        Unsuspend
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="outline" className="flex-1" disabled={userBusyId === p.id} onClick={() => toggleSuspend(p.id, true)}>
+                        Suspend
+                      </Button>
+                    )}
+                    <Button size="sm" variant="destructive" className="flex-1" disabled={userBusyId === p.id} onClick={() => setConfirmDeleteId(p.id)}>
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </Card>
+
+        {/* Delete confirm modal */}
+        {confirmDeleteId && (
+          <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 backdrop-blur-sm p-4" role="dialog" aria-modal="true">
+            <Card className="max-w-md w-full p-6 space-y-4 border-destructive/40">
+              <div>
+                <h3 className="text-lg font-semibold">Delete user permanently?</h3>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Are you sure you want to permanently delete{" "}
+                  <span className="text-foreground font-medium">{userLabel(confirmDeleteId)}</span>{" "}
+                  and all associated investment records? This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="ghost" onClick={() => setConfirmDeleteId(null)} disabled={userBusyId === confirmDeleteId}>
+                  Cancel
+                </Button>
+                <Button variant="destructive" onClick={() => deleteUser(confirmDeleteId)} disabled={userBusyId === confirmDeleteId}>
+                  {userBusyId === confirmDeleteId ? "Deleting…" : "Confirm Delete"}
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
+
+
 
 
 

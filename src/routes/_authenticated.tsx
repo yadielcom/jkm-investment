@@ -9,6 +9,14 @@ export const Route = createFileRoute("/_authenticated")({
     if (error || !data.user) {
       throw redirect({ to: "/login", search: { redirect: location.href } });
     }
+    // Block suspended users
+    const { data: suspended } = await supabase.rpc("is_suspended" as never, {
+      _user_id: data.user.id,
+    } as never);
+    if (suspended === true) {
+      await supabase.auth.signOut();
+      throw redirect({ to: "/login", search: { suspended: true } });
+    }
     const role = await getCurrentUserRole(data.user.id);
     return { user: data.user, role };
   },
