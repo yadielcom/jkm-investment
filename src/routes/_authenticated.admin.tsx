@@ -409,6 +409,51 @@ function AdminPage() {
     return p?.full_name || p?.email || id.slice(0, 8);
   }
 
+  const userRows = useMemo(() => {
+    const wmap: Record<string, WalletRow> = {};
+    wallets.forEach((w) => { wmap[w.user_id] = w; });
+    const totalShares = wallets.reduce((s, w) => s + Number(w.total_shares ?? 0), 0);
+    return Object.values(profiles)
+      .map((p) => {
+        const w = wmap[p.id];
+        const shares = Number(w?.total_shares ?? 0);
+        const pct = totalShares > 0 ? (shares / totalShares) * 100 : 0;
+        const value = shares * currentPrice;
+        return { profile: p, shares, pct, value };
+      })
+      .sort((a, b) => b.shares - a.shares);
+  }, [profiles, wallets, currentPrice]);
+
+  async function toggleSuspend(userId: string, suspend: boolean) {
+    setUserBusyId(userId);
+    const { error } = await supabase.rpc("admin_set_user_suspended" as never, {
+      _user_id: userId,
+      _suspended: suspend,
+    } as never);
+    setUserBusyId(null);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(suspend ? "User suspended" : "User unsuspended");
+    void loadAll();
+  }
+
+  async function deleteUser(userId: string) {
+    setUserBusyId(userId);
+    const { error } = await supabase.rpc("admin_delete_user" as never, {
+      _user_id: userId,
+    } as never);
+    setUserBusyId(null);
+    setConfirmDeleteId(null);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("User deleted");
+    void loadAll();
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border/60 bg-sidebar text-sidebar-foreground">
