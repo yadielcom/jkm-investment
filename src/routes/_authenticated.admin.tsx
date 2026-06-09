@@ -643,6 +643,30 @@ function AdminPage() {
           </div>
         </Card>
 
+        {/* System Reset (destructive) */}
+        <Card className="p-6 border-destructive/60 bg-destructive/5">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="max-w-2xl">
+              <h2 className="text-lg font-semibold text-destructive">System Reset</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Permanently wipes all investment activity — purchases, sales, transactions,
+                wallet balances, ROI, ownership, growth history, share-price overrides,
+                pending approvals, notifications and uploaded receipts.
+              </p>
+              <p className="text-xs text-destructive mt-2">
+                User accounts, profiles, roles and database structure are preserved.
+                This action cannot be undone.
+              </p>
+            </div>
+            <Button
+              variant="destructive"
+              onClick={() => { setResetConfirmText(""); setResetOpen(true); }}
+            >
+              Reset Everything
+            </Button>
+          </div>
+        </Card>
+
         {/* User Management */}
         <Card className="p-0 overflow-hidden">
           <div className="px-4 sm:px-6 py-4 border-b border-border/60 flex items-center justify-between flex-wrap gap-2">
