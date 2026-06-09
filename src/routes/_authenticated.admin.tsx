@@ -407,6 +407,43 @@ function AdminPage() {
     void loadAll();
   }
 
+  async function runFullReset() {
+    if (resetting) return;
+    if (resetConfirmText.trim() !== "RESET") {
+      toast.error('Type RESET to confirm');
+      return;
+    }
+    setResetting(true);
+    try {
+      const { error } = await supabase.rpc("admin_full_reset" as never);
+      if (error) throw error;
+
+      // Best-effort: clear uploaded payment screenshots from storage.
+      try {
+        const { data: files } = await supabase.storage
+          .from("payment-screenshots")
+          .list("", { limit: 1000 });
+        if (files && files.length > 0) {
+          const paths = files.map((f) => f.name);
+          await supabase.storage.from("payment-screenshots").remove(paths);
+        }
+      } catch (storageErr) {
+        console.warn("[admin_full_reset] storage cleanup failed", storageErr);
+      }
+
+      toast.success("System reset complete. Share price restored to 1000 ETB.");
+      setResetOpen(false);
+      setResetConfirmText("");
+      void loadAll();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Reset failed";
+      console.error("[admin_full_reset]", err);
+      toast.error(msg);
+    } finally {
+      setResetting(false);
+    }
+  }
+
   function userLabel(id: string) {
     const p = profiles[id];
     return p?.full_name || p?.email || id.slice(0, 8);
