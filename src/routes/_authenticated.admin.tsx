@@ -820,6 +820,56 @@ function AdminPage() {
           </div>
         )}
 
+        {/* Full system reset confirm modal */}
+        {resetOpen && (
+          <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 backdrop-blur-sm p-4" role="dialog" aria-modal="true">
+            <Card className="max-w-md w-full p-6 space-y-4 border-destructive/60">
+              <div>
+                <h3 className="text-lg font-semibold text-destructive">Confirm Full Platform Reset</h3>
+                <p className="text-sm text-muted-foreground mt-2">
+                  This action will permanently remove all investment activity, transactions,
+                  portfolio values, growth history, notifications, uploaded receipts, and
+                  shareholder data.
+                </p>
+                <p className="text-sm font-medium text-destructive mt-2">
+                  This action cannot be undone.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reset-confirm-input" className="text-xs">
+                  Type <span className="font-mono font-semibold text-foreground">RESET</span> to enable confirmation
+                </Label>
+                <Input
+                  id="reset-confirm-input"
+                  value={resetConfirmText}
+                  onChange={(e) => setResetConfirmText(e.target.value)}
+                  placeholder="RESET"
+                  autoComplete="off"
+                  disabled={resetting}
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="ghost"
+                  onClick={() => { setResetOpen(false); setResetConfirmText(""); }}
+                  disabled={resetting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={runFullReset}
+                  disabled={resetting || resetConfirmText.trim() !== "RESET"}
+                >
+                  {resetting ? "Resetting…" : "Reset Everything"}
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
+
+
+
 
 
 
