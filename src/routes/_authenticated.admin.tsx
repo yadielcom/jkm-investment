@@ -187,6 +187,9 @@ function AdminPage() {
   const [submittingPrice, setSubmittingPrice] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [userBusyId, setUserBusyId] = useState<string | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState("");
+  const [resetting, setResetting] = useState(false);
 
   async function signOut() {
     await supabase.auth.signOut();
