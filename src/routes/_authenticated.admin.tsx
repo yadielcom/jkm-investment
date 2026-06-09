@@ -187,6 +187,9 @@ function AdminPage() {
   const [submittingPrice, setSubmittingPrice] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [userBusyId, setUserBusyId] = useState<string | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState("");
+  const [resetting, setResetting] = useState(false);
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -404,6 +407,43 @@ function AdminPage() {
     void loadAll();
   }
 
+  async function runFullReset() {
+    if (resetting) return;
+    if (resetConfirmText.trim() !== "RESET") {
+      toast.error('Type RESET to confirm');
+      return;
+    }
+    setResetting(true);
+    try {
+      const { error } = await supabase.rpc("admin_full_reset" as never);
+      if (error) throw error;
+
+      // Best-effort: clear uploaded payment screenshots from storage.
+      try {
+        const { data: files } = await supabase.storage
+          .from("payment-screenshots")
+          .list("", { limit: 1000 });
+        if (files && files.length > 0) {
+          const paths = files.map((f) => f.name);
+          await supabase.storage.from("payment-screenshots").remove(paths);
+        }
+      } catch (storageErr) {
+        console.warn("[admin_full_reset] storage cleanup failed", storageErr);
+      }
+
+      toast.success("System reset complete. Share price restored to 1000 ETB.");
+      setResetOpen(false);
+      setResetConfirmText("");
+      void loadAll();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Reset failed";
+      console.error("[admin_full_reset]", err);
+      toast.error(msg);
+    } finally {
+      setResetting(false);
+    }
+  }
+
   function userLabel(id: string) {
     const p = profiles[id];
     return p?.full_name || p?.email || id.slice(0, 8);
@@ -603,6 +643,30 @@ function AdminPage() {
           </div>
         </Card>
 
+        {/* System Reset (destructive) */}
+        <Card className="p-6 border-destructive/60 bg-destructive/5">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="max-w-2xl">
+              <h2 className="text-lg font-semibold text-destructive">System Reset</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Permanently wipes all investment activity — purchases, sales, transactions,
+                wallet balances, ROI, ownership, growth history, share-price overrides,
+                pending approvals, notifications and uploaded receipts.
+              </p>
+              <p className="text-xs text-destructive mt-2">
+                User accounts, profiles, roles and database structure are preserved.
+                This action cannot be undone.
+              </p>
+            </div>
+            <Button
+              variant="destructive"
+              onClick={() => { setResetConfirmText(""); setResetOpen(true); }}
+            >
+              Reset Everything
+            </Button>
+          </div>
+        </Card>
+
         {/* User Management */}
         <Card className="p-0 overflow-hidden">
           <div className="px-4 sm:px-6 py-4 border-b border-border/60 flex items-center justify-between flex-wrap gap-2">
@@ -755,6 +819,56 @@ function AdminPage() {
             </Card>
           </div>
         )}
+
+        {/* Full system reset confirm modal */}
+        {resetOpen && (
+          <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 backdrop-blur-sm p-4" role="dialog" aria-modal="true">
+            <Card className="max-w-md w-full p-6 space-y-4 border-destructive/60">
+              <div>
+                <h3 className="text-lg font-semibold text-destructive">Confirm Full Platform Reset</h3>
+                <p className="text-sm text-muted-foreground mt-2">
+                  This action will permanently remove all investment activity, transactions,
+                  portfolio values, growth history, notifications, uploaded receipts, and
+                  shareholder data.
+                </p>
+                <p className="text-sm font-medium text-destructive mt-2">
+                  This action cannot be undone.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reset-confirm-input" className="text-xs">
+                  Type <span className="font-mono font-semibold text-foreground">RESET</span> to enable confirmation
+                </Label>
+                <Input
+                  id="reset-confirm-input"
+                  value={resetConfirmText}
+                  onChange={(e) => setResetConfirmText(e.target.value)}
+                  placeholder="RESET"
+                  autoComplete="off"
+                  disabled={resetting}
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="ghost"
+                  onClick={() => { setResetOpen(false); setResetConfirmText(""); }}
+                  disabled={resetting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={runFullReset}
+                  disabled={resetting || resetConfirmText.trim() !== "RESET"}
+                >
+                  {resetting ? "Resetting…" : "Reset Everything"}
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
+
+
 
 
 

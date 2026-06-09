@@ -290,6 +290,7 @@ export type Database = {
     }
     Functions: {
       admin_delete_user: { Args: { _user_id: string }; Returns: undefined }
+      admin_full_reset: { Args: never; Returns: undefined }
       admin_set_share_price: { Args: { new_price: number }; Returns: number }
       admin_set_user_suspended: {
         Args: { _suspended: boolean; _user_id: string }
