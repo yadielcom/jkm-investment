@@ -74,14 +74,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "JKM Investment — Own a piece of the future" },
+      { name: "description", content: "JKM Investment platform. Buy shares, sell shares, and track your investment growth in real-time." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "JKM Investment — Own a piece of the future" },
+      { property: "og:description", content: "JKM Investment platform. Buy shares, sell shares, and track your investment growth in real-time." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "JKM Investment — Own a piece of the future" },
+      { name: "twitter:description", content: "JKM Investment platform. Buy shares, sell shares, and track your investment growth in real-time." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/ZzeMAjrk07Mac3BchDXfpc63M2K3/social-images/social-1784044698242-ChatGPT_Image_Jul_14,_2026,_06_54_32_PM.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/ZzeMAjrk07Mac3BchDXfpc63M2K3/social-images/social-1784044698242-ChatGPT_Image_Jul_14,_2026,_06_54_32_PM.webp" },
     ],
     links: [
       {

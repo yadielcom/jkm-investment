@@ -23,7 +23,7 @@ export const Route = createFileRoute("/")({
       { title: "JKM Investment — Own a piece of the future" },
       { name: "description", content: "JKM Investment platform. Buy shares, sell shares, and track your investment growth in real-time." },
       { property: "og:title", content: "JKM Investment — Own a piece of the future" },
-      { property: "og:description", content: "Build wealth with confidence. Join JKM Investment today." },
+      { property: "og:description", content: "JKM Investment platform. Buy shares, sell shares, and track your investment growth in real-time." },
     ],
   }),
   beforeLoad: async () => {
