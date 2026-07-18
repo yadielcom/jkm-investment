@@ -1,4 +1,5 @@
 import { createFileRoute, redirect, useNavigate, Link } from "@tanstack/react-router";
+import jkmLogo from "@/assets/jkm-logo.png";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import {
@@ -284,9 +285,7 @@ function DashboardPage() {
       <header className="sticky top-0 z-20 border-b bg-sidebar text-sidebar-foreground backdrop-blur">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 py-3">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded bg-accent text-accent-foreground grid place-items-center font-bold">
-              J
-            </div>
+            <img src={jkmLogo} alt="JKM" className="h-9 w-9 rounded object-contain bg-sidebar p-0.5" />
             <span className="font-semibold tracking-tight">JKM Investment</span>
           </div>
           <div className="flex items-center gap-2">

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, redirect, useNavigate, Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import jkmLogo from "@/assets/jkm-logo.png";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -499,9 +500,7 @@ function AdminPage() {
       <header className="border-b border-border/60 bg-sidebar text-sidebar-foreground">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded bg-accent text-accent-foreground grid place-items-center font-bold">
-              J
-            </div>
+            <img src={jkmLogo} alt="JKM" className="h-9 w-9 rounded object-contain bg-black/40 p-0.5" />
             <div className="flex flex-col leading-tight">
               <span className="font-semibold">JKM Admin</span>
               <span className="text-xs text-sidebar-foreground/70">

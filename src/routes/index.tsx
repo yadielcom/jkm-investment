@@ -2,6 +2,7 @@ import { createFileRoute, redirect, Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentUserRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import jkmLogo from "@/assets/jkm-logo.png";
 import {
   Mail,
   Phone,
@@ -70,9 +71,7 @@ function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <button onClick={scrollToTop} className="flex items-center gap-2 cursor-pointer">
-              <div className="h-9 w-9 rounded-md bg-accent text-accent-foreground grid place-items-center font-bold text-lg">
-                J
-              </div>
+              <img src={jkmLogo} alt="JKM" className="h-10 w-10 rounded-md object-contain bg-black/60 p-0.5" />
               <span className={`text-lg font-semibold tracking-tight transition-colors ${scrolled ? "text-sidebar-foreground" : "text-sidebar-foreground"}`}>
                 JKM Investment
               </span>
@@ -370,9 +369,7 @@ function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-md bg-accent text-accent-foreground grid place-items-center font-bold text-sm">
-                J
-              </div>
+              <img src={jkmLogo} alt="JKM" className="h-8 w-8 rounded-md object-contain bg-black/60 p-0.5" />
               <span className="text-sm font-medium text-sidebar-foreground">
                 JKM Investment
               </span>

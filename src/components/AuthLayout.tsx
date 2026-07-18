@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import jkmLogo from "@/assets/jkm-logo.png";
 
 export function AuthLayout({
   title,
@@ -17,11 +18,12 @@ export function AuthLayout({
       <div className="hidden md:flex md:w-1/2 bg-sidebar text-sidebar-foreground p-12 flex-col justify-between relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-sidebar via-sidebar to-black/40 pointer-events-none" />
         <div className="relative z-10">
-          <div className="flex items-center gap-2">
-            <div className="h-10 w-10 rounded-md bg-accent text-accent-foreground grid place-items-center font-bold text-lg">
-              J
+          <div className="flex items-center gap-3">
+            <img src={jkmLogo} alt="JKM Investment" className="h-12 w-12 rounded-md object-contain bg-black/40 p-1" />
+            <div className="flex flex-col">
+              <span className="text-xl font-semibold tracking-tight">JKM Investment</span>
+              <span className="text-[10px] uppercase tracking-[0.2em] text-accent/80">Billion Dollar Company</span>
             </div>
-            <span className="text-xl font-semibold tracking-tight">JKM Investment</span>
           </div>
         </div>
         <div className="relative z-10 space-y-4">
@@ -41,9 +43,7 @@ export function AuthLayout({
       <div className="flex-1 flex items-center justify-center p-6 sm:p-10">
         <div className="w-full max-w-md space-y-6">
           <div className="md:hidden flex items-center gap-2 mb-2">
-            <div className="h-9 w-9 rounded-md bg-primary text-primary-foreground grid place-items-center font-bold">
-              J
-            </div>
+            <img src={jkmLogo} alt="JKM" className="h-10 w-10 rounded-md object-contain bg-black p-1" />
             <span className="text-lg font-semibold">JKM Investment</span>
           </div>
           <div className="space-y-1">
