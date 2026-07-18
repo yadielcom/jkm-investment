@@ -2,6 +2,7 @@ import { createFileRoute, redirect, Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentUserRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import jkmLogo from "@/assets/jkm-logo.png";
 import {
   Mail,
   Phone,
