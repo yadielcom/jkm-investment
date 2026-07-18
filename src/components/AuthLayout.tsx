@@ -18,11 +18,12 @@ export function AuthLayout({
       <div className="hidden md:flex md:w-1/2 bg-sidebar text-sidebar-foreground p-12 flex-col justify-between relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-sidebar via-sidebar to-black/40 pointer-events-none" />
         <div className="relative z-10">
-          <div className="flex items-center gap-2">
-            <div className="h-10 w-10 rounded-md bg-accent text-accent-foreground grid place-items-center font-bold text-lg">
-              J
+          <div className="flex items-center gap-3">
+            <img src={jkmLogo} alt="JKM Investment" className="h-12 w-12 rounded-md object-contain bg-black/40 p-1" />
+            <div className="flex flex-col">
+              <span className="text-xl font-semibold tracking-tight">JKM Investment</span>
+              <span className="text-[10px] uppercase tracking-[0.2em] text-accent/80">Billion Dollar Company</span>
             </div>
-            <span className="text-xl font-semibold tracking-tight">JKM Investment</span>
           </div>
         </div>
         <div className="relative z-10 space-y-4">
