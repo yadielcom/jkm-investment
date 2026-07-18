@@ -43,9 +43,7 @@ export function AuthLayout({
       <div className="flex-1 flex items-center justify-center p-6 sm:p-10">
         <div className="w-full max-w-md space-y-6">
           <div className="md:hidden flex items-center gap-2 mb-2">
-            <div className="h-9 w-9 rounded-md bg-primary text-primary-foreground grid place-items-center font-bold">
-              J
-            </div>
+            <img src={jkmLogo} alt="JKM" className="h-10 w-10 rounded-md object-contain bg-black p-1" />
             <span className="text-lg font-semibold">JKM Investment</span>
           </div>
           <div className="space-y-1">
