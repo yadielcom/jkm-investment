@@ -1,4 +1,5 @@
 import { createFileRoute, redirect, useNavigate, Link } from "@tanstack/react-router";
+import jkmLogo from "@/assets/jkm-logo.png";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import {
