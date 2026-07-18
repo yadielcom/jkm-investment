@@ -369,9 +369,7 @@ function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-md bg-accent text-accent-foreground grid place-items-center font-bold text-sm">
-                J
-              </div>
+              <img src={jkmLogo} alt="JKM" className="h-8 w-8 rounded-md object-contain bg-black/60 p-0.5" />
               <span className="text-sm font-medium text-sidebar-foreground">
                 JKM Investment
               </span>
