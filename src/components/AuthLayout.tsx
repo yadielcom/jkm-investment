@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import jkmLogo from "@/assets/jkm-logo.png";
 
 export function AuthLayout({
   title,
